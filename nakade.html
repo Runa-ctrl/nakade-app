@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#0f0f1a"/>
+<title>Накъде</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0f0f1a;
+  --surface: #1a1a2e;
+  --card: #22223b;
+  --accent: #e63946;
+  --accent2: #f4a261;
+  --text: #f0eee8;
+  --muted: #9090a8;
+  --border: rgba(255,255,255,0.07);
+  --radius: 14px;
+  --font-display: 'Unbounded', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); font-family: var(--font-body); color: var(--text); overscroll-behavior: none; }
+
+.page { display: none; flex-direction: column; height: 100dvh; overflow: hidden; }
+.page.active { display: flex; }
+.scroll-body { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 90px; scrollbar-width: none; }
+.scroll-body::-webkit-scrollbar { display: none; }
+
+/* STATUS */
+.status { padding: 12px 20px 4px; display: flex; justify-content: space-between; align-items: center; }
+.status-time { font-size: 12px; font-weight: 700; color: var(--text); }
+
+/* HEADER */
+.app-header { padding: 6px 20px 16px; }
+.logo { font-family: var(--font-display); font-size: 28px; font-weight: 900; letter-spacing: -1.5px; color: var(--text); line-height: 1; }
+.logo span { color: var(--accent); }
+.logo-sub { font-size: 9px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+
+/* HERO TEXT */
+.hero { padding: 0 20px 16px; }
+.hero h1 { font-family: var(--font-display); font-size: clamp(1.5rem, 6vw, 2rem); font-weight: 900; line-height: 1.15; letter-spacing: -0.04em; margin-bottom: 4px; }
+.hero h1 em { font-style: normal; color: var(--accent2); }
+.hero p { color: var(--muted); font-size: 0.82rem; }
+
+/* STATS */
+.stats { display: flex; margin: 0 20px 16px; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; }
+.stat { flex: 1; padding: 10px 8px; text-align: center; border-right: 1px solid var(--border); }
+.stat:last-child { border-right: none; }
+.stat-num { font-family: var(--font-display); font-size: 1.1rem; font-weight: 900; color: var(--accent2); }
+.stat-label { font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 1px; }
+
+/* FILTERS */
+.filters { padding: 0 20px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.filter-row { display: flex; gap: 8px; }
+.filter-select { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: var(--font-body); font-size: 0.82rem; padding: 10px 12px; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%239090a8' d='M5 7L1 3h8z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; cursor: pointer; transition: border-color 0.2s; }
+.filter-select:focus { outline: none; border-color: var(--accent); }
+.search-wrap { flex: 2; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); display: flex; align-items: center; gap: 8px; padding: 10px 12px; transition: border-color 0.2s; }
+.search-wrap:focus-within { border-color: var(--accent); }
+.search-wrap svg { width: 14px; height: 14px; color: var(--muted); flex-shrink: 0; }
+.search-input { background: none; border: none; outline: none; color: var(--text); font-family: var(--font-body); font-size: 0.82rem; flex: 1; }
+.search-input::placeholder { color: var(--muted); }
+
+/* PILLS */
+.pills { padding: 0 20px 16px; display: flex; gap: 7px; overflow-x: auto; scrollbar-width: none; }
+.pills::-webkit-scrollbar { display: none; }
+.pill { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; color: var(--muted); font-size: 0.75rem; font-weight: 600; padding: 6px 13px; white-space: nowrap; cursor: pointer; transition: all 0.16s; user-select: none; display: flex; align-items: center; gap: 4px; }
+.pill:active { transform: scale(0.95); }
+.pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* SECTION */
+.section-hdr { padding: 0 20px 10px; display: flex; justify-content: space-between; align-items: center; }
+.section-title { font-family: var(--font-display); font-size: 0.82rem; font-weight: 700; letter-spacing: -0.02em; }
+.section-count { font-size: 0.72rem; color: var(--muted); }
+
+/* EVENT CARD */
+.event-card { margin: 0 20px 10px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; cursor: pointer; transition: border-color 0.2s, transform 0.15s; position: relative; overflow: hidden; }
+.event-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--cat-color, var(--accent)); border-radius: 0; }
+.event-card:active { transform: scale(0.98); }
+.event-card:hover { border-color: rgba(255,255,255,0.14); }
+.event-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 9px; }
+.event-name { font-family: var(--font-display); font-size: 0.88rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; flex: 1; }
+.event-price { background: var(--surface); border-radius: 8px; padding: 4px 9px; font-size: 0.72rem; font-weight: 700; color: var(--accent2); white-space: nowrap; }
+.event-price.free { color: #4ade80; }
+.event-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.meta-chip { display: flex; align-items: center; gap: 3px; font-size: 0.72rem; color: var(--muted); }
+.meta-chip svg { width: 12px; height: 12px; flex-shrink: 0; }
+.event-tag { display: inline-block; background: rgba(255,255,255,0.06); border-radius: 6px; padding: 3px 8px; font-size: 0.68rem; color: var(--muted); }
+
+/* BOTTOM NAV */
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(15,15,26,0.96); backdrop-filter: blur(16px); border-top: 1px solid var(--border); display: flex; padding: 10px 0 max(12px, env(safe-area-inset-bottom)); z-index: 50; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; transition: opacity 0.15s; }
+.nav-item:active { opacity: 0.7; }
+.nav-item svg { width: 20px; height: 20px; }
+.nav-label { font-size: 9px; font-weight: 600; letter-spacing: 0.03em; }
+.nav-item.active svg { color: var(--accent); }
+.nav-item.active .nav-label { color: var(--accent); }
+.nav-item:not(.active) svg { color: var(--muted); }
+.nav-item:not(.active) .nav-label { color: var(--muted); }
+
+/* DETAIL PAGE */
+.detail-header { padding: 12px 20px 10px; display: flex; justify-content: space-between; align-items: center; }
+.back-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.15s; }
+.back-btn:active { transform: scale(0.9); }
+.back-btn svg { width: 17px; height: 17px; color: var(--text); }
+.action-row { display: flex; gap: 8px; }
+.action-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; }
+.action-btn:active { transform: scale(0.9); }
+.action-btn svg { width: 16px; height: 16px; color: var(--muted); }
+.action-btn.liked svg { color: var(--accent); }
+
+.detail-hero { margin: 0 20px; border-radius: var(--radius); padding: 24px 20px; display: flex; align-items: flex-end; justify-content: space-between; min-height: 140px; position: relative; overflow: hidden; }
+.detail-hero-emoji { font-size: 64px; position: absolute; right: 16px; top: 50%; transform: translateY(-50%); opacity: 0.88; }
+.detail-cat-badge { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; padding: 4px 10px; font-size: 10px; font-weight: 700; color: #fff; backdrop-filter: blur(4px); }
+.detail-rating { display: flex; align-items: center; gap: 3px; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 4px 8px; }
+.detail-rating svg { width: 12px; height: 12px; color: #facc15; }
+.detail-rating span { font-size: 11px; font-weight: 700; color: #fff; }
+
+.detail-body { padding: 16px 20px 0; }
+.detail-title { font-family: var(--font-display); font-size: 1.3rem; font-weight: 900; letter-spacing: -0.04em; margin-bottom: 3px; }
+.detail-location { font-size: 11px; color: var(--muted); margin-bottom: 16px; }
+
+.trust-block { background: rgba(30,200,120,0.08); border: 1px solid rgba(30,200,120,0.2); border-radius: var(--radius); padding: 13px 14px; margin-bottom: 14px; }
+.trust-title { font-size: 9px; font-weight: 700; color: #4ade80; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 9px; }
+.trust-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.trust-item:last-child { margin-bottom: 0; }
+.trust-item svg { width: 14px; height: 14px; color: #4ade80; flex-shrink: 0; }
+.trust-item span { font-size: 11px; color: rgba(240,238,232,0.8); }
+
+.detail-chips { display: flex; gap: 8px; margin-bottom: 14px; }
+.detail-chip { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 8px; text-align: center; }
+.detail-chip svg { width: 16px; height: 16px; color: var(--accent2); margin-bottom: 3px; }
+.detail-chip-label { font-size: 9px; color: var(--muted); margin-bottom: 1px; }
+.detail-chip-val { font-size: 11px; font-weight: 700; color: var(--text); }
+
+.detail-desc { font-size: 12px; line-height: 1.65; color: var(--muted); margin-bottom: 20px; }
+
+.buy-bar { margin: 0 20px 20px; background: var(--accent); border-radius: var(--radius); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 8px 28px rgba(230,57,70,0.35); cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+.buy-bar:active { transform: scale(0.98); box-shadow: 0 4px 14px rgba(230,57,70,0.2); }
+.buy-price-label { font-size: 10px; color: rgba(255,255,255,0.7); margin-bottom: 1px; }
+.buy-price { font-family: var(--font-display); font-size: 1.3rem; font-weight: 900; color: #fff; }
+.buy-btn-inner { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; padding: 10px 20px; font-size: 12px; font-weight: 700; color: #fff; }
+
+/* SHEET */
+.sheet-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: flex-end; }
+.sheet-overlay.open { display: flex; }
+.sheet { background: var(--surface); border-radius: 24px 24px 0 0; width: 100%; padding: 0 0 max(24px, env(safe-area-inset-bottom)); animation: slideUp 0.32s cubic-bezier(0.34,1.4,0.64,1); border-top: 1px solid var(--border); }
+@keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.sheet-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 14px auto 18px; }
+.sheet-event-name { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--text); padding: 0 20px 3px; letter-spacing: -0.03em; }
+.sheet-event-sub { font-size: 11px; color: var(--muted); padding: 0 20px 16px; }
+.sheet-section { padding: 0 20px 14px; }
+.sheet-label { font-size: 9px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
+.qty-row { display: flex; align-items: center; justify-content: space-between; background: var(--card); border-radius: var(--radius); padding: 12px 16px; border: 1px solid var(--border); }
+.qty-label { font-size: 12px; font-weight: 600; color: var(--text); }
+.qty-controls { display: flex; align-items: center; gap: 16px; }
+.qty-btn { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.13s; user-select: none; }
+.qty-btn:active { transform: scale(0.88); }
+.qty-minus { background: var(--surface); border: 1px solid var(--border); }
+.qty-plus { background: var(--accent); }
+.qty-btn svg { width: 14px; height: 14px; }
+.qty-minus svg { color: var(--text); }
+.qty-plus svg { color: #fff; }
+.qty-num { font-family: var(--font-display); font-size: 1.1rem; font-weight: 900; color: var(--text); min-width: 22px; text-align: center; }
+
+.price-summary { background: var(--card); border-radius: var(--radius); padding: 13px 16px; border: 1px solid var(--border); }
+.price-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
+.price-row:last-child { margin-bottom: 0; border-top: 1px solid var(--border); padding-top: 9px; margin-top: 4px; }
+.price-row-label { font-size: 11px; color: var(--muted); }
+.price-row-val { font-size: 11px; font-weight: 600; color: var(--text); }
+.price-row:last-child .price-row-label { font-size: 12px; font-weight: 700; color: var(--text); }
+.price-row:last-child .price-row-val { font-size: 12px; font-weight: 800; color: var(--accent2); }
+
+.google-btn { margin: 0 20px 10px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 13px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--text); transition: background 0.15s; }
+.google-btn:active { background: var(--border); }
+.google-dot { width: 18px; height: 18px; border-radius: 50%; background: #ea4335; flex-shrink: 0; }
+.pay-btn { margin: 0 20px; background: var(--accent); border-radius: var(--radius); padding: 15px; text-align: center; font-family: var(--font-display); font-size: 0.82rem; font-weight: 700; color: #fff; cursor: pointer; box-shadow: 0 6px 20px rgba(230,57,70,0.3); transition: transform 0.15s; letter-spacing: 0.02em; }
+.pay-btn:active { transform: scale(0.98); }
+
+/* SUCCESS */
+.success-screen { display: none; flex-direction: column; align-items: center; justify-content: center; height: 100dvh; padding: 40px 24px; text-align: center; background: var(--bg); }
+.success-screen.active { display: flex; }
+.success-icon { width: 80px; height: 80px; background: rgba(74,222,128,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; border: 1px solid rgba(74,222,128,0.3); }
+.success-icon svg { width: 36px; height: 36px; color: #4ade80; }
+.success-title { font-family: var(--font-display); font-size: 1.4rem; font-weight: 900; letter-spacing: -0.04em; margin-bottom: 8px; }
+.success-sub { font-size: 13px; color: var(--muted); line-height: 1.65; margin-bottom: 28px; }
+.success-ticket { background: var(--card); border: 1px dashed rgba(244,162,97,0.4); border-radius: var(--radius); padding: 18px 20px; width: 100%; margin-bottom: 24px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
+.ticket-info .ticket-event { font-family: var(--font-display); font-size: 0.88rem; font-weight: 700; margin-bottom: 4px; letter-spacing: -0.02em; }
+.ticket-info .ticket-detail { font-size: 11px; color: var(--muted); }
+.ticket-qr { font-size: 36px; }
+.back-home { background: var(--accent); border-radius: var(--radius); padding: 14px 32px; font-family: var(--font-display); font-size: 0.78rem; font-weight: 700; color: #fff; cursor: pointer; letter-spacing: 0.02em; }
+.back-home:active { transform: scale(0.97); }
+
+/* SAVED EMPTY */
+.empty { padding: 60px 20px; text-align: center; }
+.empty-emoji { font-size: 36px; margin-bottom: 12px; }
+.empty-title { font-family: var(--font-display); font-size: 0.9rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.02em; }
+.empty-sub { font-size: 12px; color: var(--muted); }
+
+/* TOAST */
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-16px); background: rgba(240,238,232,0.95); color: var(--bg); font-size: 12px; font-weight: 700; padding: 10px 20px; border-radius: 999px; z-index: 200; opacity: 0; transition: all 0.28s; pointer-events: none; white-space: nowrap; backdrop-filter: blur(8px); }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- ══ HOME ══ -->
+<div class="page active" id="page-home">
+  <div class="scroll-body">
+    <div class="status">
+      <span class="status-time" id="clock">9:41</span>
+      <div style="display:flex;gap:3px;align-items:center;">
+        <svg width="14" height="10" viewBox="0 0 14 10"><rect x="0" y="3" width="2.5" height="7" rx="1" fill="#9090a8" opacity=".5"/><rect x="3.5" y="2" width="2.5" height="8" rx="1" fill="#9090a8" opacity=".7"/><rect x="7" y="0" width="2.5" height="10" rx="1" fill="#f0eee8"/><rect x="10.5" y="0" width="2.5" height="10" rx="1" fill="#f0eee8"/></svg>
+      </div>
+    </div>
+    <div class="app-header">
+      <div class="logo">Накъ<span>де</span></div>
+      <div class="logo-sub">Събития в България</div>
+    </div>
+    <div class="hero">
+      <h1>Какво правиш<br/><em>тази вечер?</em></h1>
+      <p>Намери събитие по твой вкус</p>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Събития</div></div>
+      <div class="stat"><div class="stat-num" id="stat-cities">0</div><div class="stat-label">Града</div></div>
+      <div class="stat"><div class="stat-num" id="stat-free">0</div><div class="stat-label">Безплатни</div></div>
+    </div>
+
+    <div class="filters">
+      <div class="filter-row">
+        <select class="filter-select" id="f-city" onchange="applyFilters()">
+          <option value="">📍 Всички градове</option>
+          <option>София</option><option>Пловдив</option><option>Варна</option><option>Бургас</option>
+        </select>
+        <select class="filter-select" id="f-date" onchange="applyFilters()">
+          <option value="">📅 Всяка дата</option>
+          <option value="today">Днес</option><option value="weekend">Уикенд</option><option value="week">Тази седмица</option>
+        </select>
+      </div>
+      <div class="filter-row">
+        <select class="filter-select" id="f-price" onchange="applyFilters()" style="flex:1;">
+          <option value="">💰 Всяка цена</option>
+          <option value="free">Безплатно</option><option value="low">До 20 лв</option><option value="mid">20–50 лв</option><option value="high">50+ лв</option>
+        </select>
+        <div class="search-wrap" style="flex:2;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" placeholder="Търси..." id="f-search" oninput="applyFilters()"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="pills" id="pills">
+      <div class="pill active" onclick="selectPill(this,'')" data-cat="">Всичко</div>
+      <div class="pill" onclick="selectPill(this,'concert')" data-cat="concert">🎵 Концерти</div>
+      <div class="pill" onclick="selectPill(this,'theatre')" data-cat="theatre">🎭 Театър</div>
+      <div class="pill" onclick="selectPill(this,'sport')" data-cat="sport">⚽ Спорт</div>
+      <div class="pill" onclick="selectPill(this,'nature')" data-cat="nature">🌿 Природа</div>
+      <div class="pill" onclick="selectPill(this,'festival')" data-cat="festival">🎪 Фестивали</div>
+      <div class="pill" onclick="selectPill(this,'food')" data-cat="food">🍷 Храна</div>
+    </div>
+
+    <div class="section-hdr">
+      <div class="section-title">Предстоящи</div>
+      <div class="section-count" id="results-count"></div>
+    </div>
+
+    <div id="events-list"></div>
+    <div class="empty" id="empty-state" style="display:none;">
+      <div class="empty-emoji">🔦</div>
+      <div class="empty-title">Няма намерени</div>
+      <div class="empty-sub">Опитай с друг филтър</div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <div class="nav-item active" onclick="goTo('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <div class="nav-label">Начало</div>
+    </div>
+    <div class="nav-item" onclick="goTo('saved')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      <div class="nav-label">Запазени</div>
+    </div>
+    <div class="nav-item" onclick="showToast('Профилът идва скоро!')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <div class="nav-label">Профил</div>
+    </div>
+  </nav>
+</div>
+
+<!-- ══ SAVED ══ -->
+<div class="page" id="page-saved">
+  <div class="status"><span class="status-time">9:41</span></div>
+  <div style="padding:6px 20px 16px;"><div class="logo" style="font-size:22px;">Запазени</div></div>
+  <div class="scroll-body" id="saved-list"></div>
+  <nav class="bottom-nav">
+    <div class="nav-item" onclick="goTo('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <div class="nav-label">Начало</div>
+    </div>
+    <div class="nav-item active" onclick="goTo('saved')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      <div class="nav-label">Запазени</div>
+    </div>
+    <div class="nav-item" onclick="showToast('Профилът идва скоро!')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <div class="nav-label">Профил</div>
+    </div>
+  </nav>
+</div>
+
+<!-- ══ DETAIL ══ -->
+<div class="page" id="page-detail">
+  <div class="scroll-body">
+    <div class="status"><span class="status-time">9:41</span></div>
+    <div class="detail-header">
+      <div class="back-btn" onclick="goTo('home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      </div>
+      <div class="action-row">
+        <div class="action-btn" id="like-btn" onclick="toggleLike()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+        </div>
+        <div class="action-btn" onclick="showToast('Линкът е копиран!')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-hero" id="d-hero">
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
+        <div class="detail-cat-badge" id="d-badge"></div>
+        <div class="detail-rating">
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span id="d-rating"></span>
+        </div>
+      </div>
+      <div class="detail-hero-emoji" id="d-emoji"></div>
+    </div>
+
+    <div class="detail-body">
+      <div class="detail-title" id="d-title"></div>
+      <div class="detail-location" id="d-location"></div>
+
+      <div class="trust-block">
+        <div class="trust-title">Защо ще ти хареса</div>
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span id="d-going"></span>
+        </div>
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>Куриран от екипа на Накъде</span>
+        </div>
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>Безплатно връщане до 48ч преди</span>
+        </div>
+      </div>
+
+      <div class="detail-chips">
+        <div class="detail-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div class="detail-chip-label">Дата</div>
+          <div class="detail-chip-val" id="d-date"></div>
+        </div>
+        <div class="detail-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <div class="detail-chip-label">Час</div>
+          <div class="detail-chip-val" id="d-time"></div>
+        </div>
+        <div class="detail-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div class="detail-chip-label">Град</div>
+          <div class="detail-chip-val" id="d-city"></div>
+        </div>
+      </div>
+
+      <div class="detail-desc" id="d-desc"></div>
+    </div>
+
+    <div class="buy-bar" id="buy-bar" onclick="openSheet()">
+      <div>
+        <div class="buy-price-label">Цена на билет</div>
+        <div class="buy-price" id="d-price"></div>
+      </div>
+      <div class="buy-btn-inner">Купи билет</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SUCCESS ══ -->
+<div class="success-screen" id="success-screen">
+  <div class="success-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+  </div>
+  <div class="success-title">Билетът е твой!</div>
+  <div class="success-sub">Изпратихме потвърждение на имейла ти. Приятно преживяване!</div>
+  <div class="success-ticket">
+    <div class="ticket-info">
+      <div class="ticket-event" id="s-event"></div>
+      <div class="ticket-detail" id="s-detail"></div>
+    </div>
+    <div class="ticket-qr">🎟️</div>
+  </div>
+  <div class="back-home" onclick="goTo('home')">Към начало</div>
+</div>
+
+<!-- ══ SHEET ══ -->
+<div class="sheet-overlay" id="sheet" onclick="closeSheetOutside(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-event-name" id="sh-name"></div>
+    <div class="sheet-event-sub" id="sh-sub"></div>
+    <div class="sheet-section">
+      <div class="sheet-label">Брой билети</div>
+      <div class="qty-row">
+        <div class="qty-label">Билет</div>
+        <div class="qty-controls">
+          <div class="qty-btn qty-minus" onclick="changeQty(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+          <div class="qty-num" id="qty-num">2</div>
+          <div class="qty-btn qty-plus" onclick="changeQty(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+        </div>
+      </div>
+    </div>
+    <div class="sheet-section">
+      <div class="google-btn" onclick="showToast('Google login идва скоро!')">
+        <div class="google-dot"></div>Продължи с Google
+      </div>
+    </div>
+    <div class="sheet-section">
+      <div class="sheet-label">Обобщение</div>
+      <div class="price-summary">
+        <div class="price-row"><div class="price-row-label" id="sh-tickets"></div><div class="price-row-val" id="sh-sub-price"></div></div>
+        <div class="price-row"><div class="price-row-label">Такса обработка</div><div class="price-row-val" id="sh-fee"></div></div>
+        <div class="price-row"><div class="price-row-label">Общо</div><div class="price-row-val" id="sh-total"></div></div>
+      </div>
+    </div>
+    <div class="pay-btn" onclick="completePurchase()">Плати с карта</div>
+  </div>
+</div>
+
+<script>
+const CAT_COLORS = { concert:'#e63946', theatre:'#a855f7', sport:'#3b82f6', nature:'#22c55e', festival:'#ec4899', food:'#f97316', kids:'#06b6d4' };
+
+const EVENTS = [
+  {id:1,title:'Джаз под звездите',cat:'concert',city:'София',venue:'Борисова градина, Летен театър',date:'20 юли',time:'21:00',price:35,emoji:'🎷',badge:'Концерти',rating:4.9,going:142,desc:'Вечер на живо джаз с водещи български и международни музиканти под открито небе. Носете одеяло и добро настроение.',free:false},
+  {id:2,title:'Опера на площада',cat:'theatre',city:'Пловдив',venue:'Античен театър Пловдив',date:'21 юли',time:'20:30',price:0,emoji:'🎭',badge:'Театър',rating:4.8,going:89,desc:'Безплатен оперен спектакъл в рамките на Пловдив — Европейска столица на Културата. Незабравима вечер.',free:true},
+  {id:3,title:'Планински преход — Витоша',cat:'nature',city:'София',venue:'Хижа Алеко',date:'22 юли',time:'09:00',price:0,emoji:'🏔️',badge:'Природа',rating:4.7,going:34,desc:'Организиран преход за всички нива. Носете вода и удобни обувки.',free:true},
+  {id:4,title:'Варна Фест 2024',cat:'festival',city:'Варна',venue:'Морска градина',date:'26 юли',time:'18:00',price:60,emoji:'🎪',badge:'Фестивали',rating:4.9,going:412,desc:'Тридневен музикален фестивал с над 20 изпълнители. EDM, pop, rock, балкански ритми.',free:false},
+  {id:5,title:'Детски научен ден',cat:'kids',city:'София',venue:'Природонаучен музей',date:'27 юли',time:'11:00',price:10,emoji:'🔬',badge:'За деца',rating:4.6,going:67,desc:'Интерактивни експерименти и викторини за деца от 5 до 14 г.',free:false},
+  {id:6,title:'Вино & Дзуджанело',cat:'food',city:'Пловдив',venue:'Капана',date:'28 юли',time:'16:00',price:25,emoji:'🍷',badge:'Храна',rating:4.8,going:55,desc:'Дегустация на тракийски вина с малки хапки в сърцето на Капана.',free:false},
+  {id:7,title:'Йога на плажа',cat:'nature',city:'Бургас',venue:'Централен плаж',date:'20 юли',time:'07:30',price:0,emoji:'🧘',badge:'Природа',rating:4.9,going:41,desc:'Безплатна сутрешна йога практика на плажа с изгрев. Носете постелка и вода.',free:true},
+  {id:8,title:'Локал Джаз Клуб',cat:'concert',city:'Варна',venue:'Джаз Клуб Морски',date:'19 юли',time:'22:00',price:20,emoji:'🎺',badge:'Концерти',rating:4.7,going:28,desc:'Малка и уютна джаз вечер с живо трио. Резервирай маса.',free:false},
+];
+
+let activeCat = '';
+let currentEvent = null;
+let savedIds = new Set();
+let qty = 2;
+
+function goTo(page) {
+  document.querySelectorAll('.page,.success-screen').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page)?.classList.add('active');
+  if (page === 'saved') renderSaved();
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = EVENTS.length;
+  document.getElementById('stat-cities').textContent = new Set(EVENTS.map(e=>e.city)).size;
+  document.getElementById('stat-free').textContent = EVENTS.filter(e=>e.free).length;
+}
+
+function selectPill(el, cat) {
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  activeCat = cat;
+  applyFilters();
+}
+
+function applyFilters() {
+  const city = document.getElementById('f-city').value;
+  const price = document.getElementById('f-price').value;
+  const q = document.getElementById('f-search').value.toLowerCase();
+
+  let list = EVENTS.filter(ev => {
+    if (activeCat && ev.cat !== activeCat) return false;
+    if (city && ev.city !== city) return false;
+    if (price === 'free' && !ev.free) return false;
+    if (price === 'low' && ev.price > 20) return false;
+    if (price === 'mid' && (ev.price < 20 || ev.price > 50)) return false;
+    if (price === 'high' && ev.price < 50) return false;
+    if (q && !ev.title.toLowerCase().includes(q) && !ev.city.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const container = document.getElementById('events-list');
+  const empty = document.getElementById('empty-state');
+  document.getElementById('results-count').textContent = list.length + ' ' + (list.length===1?'събитие':'събития');
+
+  if (!list.length) { container.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display = 'none';
+  container.innerHTML = list.map(ev => `
+    <div class="event-card" onclick="openDetail(${ev.id})" style="--cat-color:${CAT_COLORS[ev.cat]||'#e63946'};">
+      <div class="event-top">
+        <div class="event-name">${ev.title}</div>
+        <div class="event-price ${ev.free?'free':''}">${ev.free?'Безплатно':ev.price+' лв'}</div>
+      </div>
+      <div class="event-meta">
+        <div class="meta-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${ev.date}</div>
+        <div class="meta-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${ev.time}</div>
+        <div class="meta-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${ev.city}</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="event-tag">${ev.badge}</div>
+        <div style="font-size:10px;color:var(--muted);">⭐ ${ev.rating} · ${ev.going} ще ходят</div>
+      </div>
+    </div>`).join('');
+}
+
+function openDetail(id) {
+  const ev = EVENTS.find(e=>e.id===id);
+  if (!ev) return;
+  currentEvent = ev;
+  const color = CAT_COLORS[ev.cat]||'#e63946';
+
+  document.getElementById('d-hero').style.background = color + '33';
+  document.getElementById('d-hero').style.border = '1px solid ' + color + '44';
+  document.getElementById('d-emoji').textContent = ev.emoji;
+  document.getElementById('d-badge').textContent = ev.badge + ' · ' + ev.city;
+  document.getElementById('d-rating').textContent = ev.rating;
+  document.getElementById('d-title').textContent = ev.title;
+  document.getElementById('d-location').textContent = ev.venue + ' · ' + ev.city;
+  document.getElementById('d-going').textContent = ev.going + ' души вече са купили/записани';
+  document.getElementById('d-date').textContent = ev.date;
+  document.getElementById('d-time').textContent = ev.time;
+  document.getElementById('d-city').textContent = ev.city;
+  document.getElementById('d-desc').textContent = ev.desc;
+
+  const likeBtn = document.getElementById('like-btn');
+  likeBtn.classList.toggle('liked', savedIds.has(ev.id));
+
+  const buyBar = document.getElementById('buy-bar');
+  if (ev.free) {
+    buyBar.style.display = 'none';
+  } else {
+    buyBar.style.display = 'flex';
+    document.getElementById('d-price').textContent = ev.price + ' лв';
+  }
+
+  goTo('detail');
+}
+
+function toggleLike() {
+  if (!currentEvent) return;
+  const btn = document.getElementById('like-btn');
+  if (savedIds.has(currentEvent.id)) {
+    savedIds.delete(currentEvent.id);
+    btn.classList.remove('liked');
+    showToast('Премахнато от запазени');
+  } else {
+    savedIds.add(currentEvent.id);
+    btn.classList.add('liked');
+    showToast('Запазено! ❤️');
+  }
+}
+
+function renderSaved() {
+  const list = EVENTS.filter(e => savedIds.has(e.id));
+  const container = document.getElementById('saved-list');
+  if (!list.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-emoji">♡</div><div class="empty-title">Нямаш запазени</div><div class="empty-sub">Натисни сърчицето на събитие за да го запазиш</div></div>`;
+    return;
+  }
+  container.innerHTML = `<div style="padding:8px 0;"></div>` + list.map(ev => `
+    <div class="event-card" onclick="openDetail(${ev.id})" style="--cat-color:${CAT_COLORS[ev.cat]||'#e63946'};">
+      <div class="event-top">
+        <div class="event-name">${ev.title}</div>
+        <div class="event-price ${ev.free?'free':''}">${ev.free?'Безплатно':ev.price+' лв'}</div>
+      </div>
+      <div class="event-meta">
+        <div class="meta-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${ev.date}</div>
+        <div class="meta-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${ev.city}</div>
+      </div>
+      <div class="event-tag">${ev.badge}</div>
+    </div>`).join('');
+}
+
+function openSheet() {
+  if (!currentEvent) return;
+  qty = 2;
+  updateSheet();
+  document.getElementById('sheet').classList.add('open');
+}
+
+function closeSheetOutside(e) {
+  if (e.target === document.getElementById('sheet')) document.getElementById('sheet').classList.remove('open');
+}
+
+function changeQty(d) {
+  qty = Math.max(1, Math.min(10, qty+d));
+  updateSheet();
+}
+
+function updateSheet() {
+  if (!currentEvent) return;
+  document.getElementById('sh-name').textContent = currentEvent.title;
+  document.getElementById('sh-sub').textContent = currentEvent.date + ' · ' + currentEvent.time + ' · ' + currentEvent.city;
+  document.getElementById('qty-num').textContent = qty;
+  const sub = currentEvent.price * qty;
+  const fee = qty;
+  document.getElementById('sh-tickets').textContent = qty + ' × ' + currentEvent.price + ' лв';
+  document.getElementById('sh-sub-price').textContent = sub + ' лв';
+  document.getElementById('sh-fee').textContent = fee + ' лв';
+  document.getElementById('sh-total').textContent = (sub+fee) + ' лв';
+}
+
+function completePurchase() {
+  document.getElementById('sheet').classList.remove('open');
+  document.getElementById('s-event').textContent = currentEvent.title;
+  document.getElementById('s-detail').textContent = currentEvent.date + ' · ' + currentEvent.time + ' · ' + currentEvent.venue;
+  document.querySelectorAll('.page,.success-screen').forEach(p=>p.classList.remove('active'));
+  document.getElementById('success-screen').classList.add('active');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function updateClock() {
+  const now = new Date();
+  const t = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  document.querySelectorAll('.status-time').forEach(el => el.textContent = t);
+}
+
+updateClock();
+setInterval(updateClock, 30000);
+updateStats();
+applyFilters();
+</script>
+</body>
+</html>
