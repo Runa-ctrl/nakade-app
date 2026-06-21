@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#fdfcfb"/>
+<title>Накъде — Админ панел</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #fdfcfb;
+  --surface: #f4f3f1;
+  --card: #ffffff;
+  --accent: #e63946;
+  --text: #1a1a1a;
+  --muted: #999990;
+  --border: #f0eee8;
+  --radius: 18px;
+  --green-bg: #eafbf0;
+  --green-text: #1a8a4a;
+  --amber-bg: #fff3e0;
+  --amber-text: #c06820;
+  --font-display: 'Unbounded', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); font-family: var(--font-body); color: var(--text); }
+.hidden { display: none !important; }
+
+/* ── LOGIN SCREEN ── */
+#login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: linear-gradient(180deg, #fdfcfb, #f4f3f1); }
+.login-box { width: 100%; max-width: 360px; background: var(--card); border-radius: 24px; padding: 32px 28px; box-shadow: 0 20px 50px rgba(0,0,0,0.08); border: 1px solid var(--border); }
+.login-logo { font-family: var(--font-display); font-size: 28px; font-weight: 900; letter-spacing: -1.3px; text-align: center; margin-bottom: 4px; }
+.login-logo span { color: var(--accent); }
+.login-sub { text-align: center; color: var(--muted); font-size: 12px; margin-bottom: 28px; }
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
+.form-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; font-family: var(--font-body); font-size: 14px; color: var(--text); transition: border-color 0.2s; }
+.form-input:focus { outline: none; border-color: var(--accent); }
+.btn-primary { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 12px; padding: 13px; font-family: var(--font-display); font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 6px; letter-spacing: 0.3px; transition: transform 0.15s, opacity 0.15s; }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.login-error { background: #fff0f0; color: #c0392b; border-radius: 10px; padding: 10px 12px; font-size: 12px; margin-bottom: 14px; display: none; }
+.login-error.show { display: block; }
+
+/* ── ADMIN APP ── */
+#admin-app { display: none; min-height: 100vh; }
+#admin-app.active { display: block; }
+
+.admin-header { background: var(--card); border-bottom: 1px solid var(--border); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+.admin-logo { font-family: var(--font-display); font-size: 20px; font-weight: 900; letter-spacing: -1px; }
+.admin-logo span { color: var(--accent); }
+.logout-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px; font-size: 12px; font-weight: 600; color: var(--text); cursor: pointer; }
+.logout-btn:active { transform: scale(0.96); }
+
+.admin-tabs { display: flex; gap: 8px; padding: 16px 20px 0; max-width: 700px; margin: 0 auto; }
+.admin-tab { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 16px; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.15s; position: relative; }
+.admin-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tab-badge { background: rgba(0,0,0,0.15); border-radius: 999px; padding: 1px 6px; font-size: 10px; margin-left: 5px; }
+.admin-tab.active .tab-badge { background: rgba(255,255,255,0.25); }
+
+.admin-content { max-width: 700px; margin: 0 auto; padding: 20px; }
+
+/* ── ADD EVENT FORM ── */
+.section-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.03); }
+.section-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.02em; }
+.form-row { display: flex; gap: 10px; }
+.form-row .form-group { flex: 1; }
+.form-select { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; font-family: var(--font-body); font-size: 14px; color: var(--text); appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23999990' d='M5 7L1 3h8z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
+.form-select:focus { outline: none; border-color: var(--accent); }
+.form-textarea { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; font-family: var(--font-body); font-size: 14px; color: var(--text); resize: vertical; min-height: 70px; }
+.form-textarea:focus { outline: none; border-color: var(--accent); }
+.btn-submit { background: var(--accent); color: #fff; border: none; border-radius: 12px; padding: 14px; font-family: var(--font-display); font-size: 13px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 6px; letter-spacing: 0.3px; transition: transform 0.15s; }
+.btn-submit:active { transform: scale(0.98); }
+.btn-submit:disabled { opacity: 0.6; }
+
+/* ── EVENT LIST CARDS ── */
+.admin-event-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.03); }
+.aec-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+.aec-title { font-family: var(--font-display); font-size: 14px; font-weight: 700; letter-spacing: -0.02em; }
+.aec-status { font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.status-pending { background: var(--amber-bg); color: var(--amber-text); }
+.status-approved { background: var(--green-bg); color: var(--green-text); }
+.aec-meta { font-size: 11.5px; color: var(--muted); margin-bottom: 4px; }
+.aec-desc { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 8px 0; }
+.aec-actions { display: flex; gap: 8px; margin-top: 12px; }
+.aec-btn { flex: 1; border: none; border-radius: 10px; padding: 10px; font-size: 12px; font-weight: 700; cursor: pointer; transition: transform 0.15s; }
+.aec-btn:active { transform: scale(0.96); }
+.btn-approve { background: var(--green-text); color: #fff; }
+.btn-edit { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.btn-delete { background: #fff0f0; color: #c0392b; }
+
+.empty-msg { text-align: center; padding: 50px 20px; color: var(--muted); font-size: 13px; }
+
+.loader { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-16px); background: var(--text); color: #fff; font-size: 12px; font-weight: 700; padding: 10px 20px; border-radius: 999px; z-index: 200; opacity: 0; transition: all 0.28s; pointer-events: none; white-space: nowrap; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error { background: #c0392b; }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Накъ<span>де</span></div>
+    <div class="login-sub">Административен панел</div>
+
+    <div class="login-error" id="login-error"></div>
+
+    <div class="form-group">
+      <label class="form-label">Имейл</label>
+      <input type="email" class="form-input" id="login-email" placeholder="твоя@имейл.com" autocomplete="username"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Парола</label>
+      <input type="password" class="form-input" id="login-password" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+    <button class="btn-primary" id="login-btn" onclick="doLogin()">Вход</button>
+  </div>
+</div>
+
+<!-- ══ ADMIN APP ══ -->
+<div id="admin-app">
+  <div class="admin-header">
+    <div class="admin-logo">Накъ<span>де</span> · Админ</div>
+    <button class="logout-btn" onclick="doLogout()">Изход</button>
+  </div>
+
+  <div class="admin-tabs">
+    <div class="admin-tab active" id="tab-add" onclick="switchTab('add')">Добави събитие</div>
+    <div class="admin-tab" id="tab-pending" onclick="switchTab('pending')">Чакащи <span class="tab-badge" id="pending-count">0</span></div>
+    <div class="admin-tab" id="tab-approved" onclick="switchTab('approved')">Публикувани <span class="tab-badge" id="approved-count">0</span></div>
+  </div>
+
+  <div class="admin-content">
+
+    <!-- ADD EVENT TAB -->
+    <div id="panel-add">
+      <div class="section-card">
+        <div class="section-title">➕ Ново събитие</div>
+
+        <div class="form-group">
+          <label class="form-label">Название</label>
+          <input class="form-input" id="f-name" placeholder="Напр. Джаз под звездите"/>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Категория</label>
+            <select class="form-select" id="f-category">
+              <option value="concert">🎵 Концерти</option>
+              <option value="theatre">🎭 Театър</option>
+              <option value="sport">⚽ Спорт</option>
+              <option value="nature">🌿 Природа</option>
+              <option value="festival">🎪 Фестивали</option>
+              <option value="food">🍷 Храна</option>
+              <option value="kids">🧒 За деца</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Град</label>
+            <select class="form-select" id="f-city">
+              <option>София</option>
+              <option>Пловдив</option>
+              <option>Варна</option>
+              <option>Бургас</option>
+              <option>Велико Търново</option>
+              <option>Стара Загора</option>
+              <option>Русе</option>
+              <option>Благоевград</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Дата</label>
+            <input type="date" class="form-input" id="f-date"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Цена (€, 0 = безплатно)</label>
+            <input type="number" class="form-input" id="f-price" placeholder="0" min="0" step="0.5"/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Място / локация</label>
+          <input class="form-input" id="f-venue" placeholder="Напр. Борисова градина, Летен театър"/>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Описание</label>
+          <textarea class="form-textarea" id="f-description" placeholder="Кратко описание на събитието..."></textarea>
+        </div>
+
+        <button class="btn-submit" id="submit-btn" onclick="addEvent()">Добави за преглед</button>
+      </div>
+    </div>
+
+    <!-- PENDING TAB -->
+    <div id="panel-pending" class="hidden">
+      <div id="pending-list"><div class="loader">Зареждане...</div></div>
+    </div>
+
+    <!-- APPROVED TAB -->
+    <div id="panel-approved" class="hidden">
+      <div id="approved-list"><div class="loader">Зареждане...</div></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ══════════ SUPABASE SETUP ══════════
+const SUPABASE_URL = 'https://hijtjaxxojloyptuieov.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_I87az8O80kqqU6wJNrZiiQ_0dnvriHv';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const CAT_NAMES = { concert:'🎵 Концерти', theatre:'🎭 Театър', sport:'⚽ Спорт', nature:'🌿 Природа', festival:'🎪 Фестивали', food:'🍷 Храна', kids:'🧒 За деца' };
+
+// ══════════ AUTH ══════════
+async function checkSession() {
+  const { data } = await sb.auth.getSession();
+  if (data.session) {
+    showAdmin();
+  } else {
+    showLogin();
+  }
+}
+
+function showLogin() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('admin-app').classList.remove('active');
+}
+
+function showAdmin() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-app').classList.add('active');
+  loadCounts();
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errorBox = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+
+  errorBox.classList.remove('show');
+
+  if (!email || !password) {
+    errorBox.textContent = 'Моля въведи имейл и парола.';
+    errorBox.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Влизане...';
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+
+  btn.disabled = false;
+  btn.textContent = 'Вход';
+
+  if (error) {
+    errorBox.textContent = 'Грешен имейл или парола.';
+    errorBox.classList.add('show');
+    return;
+  }
+
+  showAdmin();
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  showLogin();
+}
+
+// ══════════ TABS ══════════
+function switchTab(tab) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('panel-add').classList.toggle('hidden', tab !== 'add');
+  document.getElementById('panel-pending').classList.toggle('hidden', tab !== 'pending');
+  document.getElementById('panel-approved').classList.toggle('hidden', tab !== 'approved');
+
+  if (tab === 'pending') loadEvents('pending');
+  if (tab === 'approved') loadEvents('approved');
+}
+
+// ══════════ ADD EVENT ══════════
+async function addEvent() {
+  const name = document.getElementById('f-name').value.trim();
+  const category = document.getElementById('f-category').value;
+  const city = document.getElementById('f-city').value;
+  const date = document.getElementById('f-date').value;
+  const price = parseFloat(document.getElementById('f-price').value) || 0;
+  const venue = document.getElementById('f-venue').value.trim();
+  const description = document.getElementById('f-description').value.trim();
+
+  if (!name || !date) {
+    showToast('Моля въведи поне название и дата', true);
+    return;
+  }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Добавяне...';
+
+  const { error } = await sb.from('Events').insert([{
+    name, category, city, date, price, venue, description, status: 'pending'
+  }]);
+
+  btn.disabled = false;
+  btn.textContent = 'Добави за преглед';
+
+  if (error) {
+    showToast('Грешка: ' + error.message, true);
+    return;
+  }
+
+  // clear form
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-date').value = '';
+  document.getElementById('f-price').value = '';
+  document.getElementById('f-venue').value = '';
+  document.getElementById('f-description').value = '';
+
+  showToast('Събитието е добавено за преглед! ✓');
+  loadCounts();
+}
+
+// ══════════ LOAD EVENTS ══════════
+async function loadEvents(status) {
+  const containerId = status === 'pending' ? 'pending-list' : 'approved-list';
+  const container = document.getElementById(containerId);
+  container.innerHTML = '<div class="loader">Зареждане...</div>';
+
+  const { data, error } = await supabase
+    .from('Events')
+    .select('*')
+    .eq('status', status)
+    .order('date', { ascending: true });
+
+  if (error) {
+    container.innerHTML = '<div class="empty-msg">Грешка при зареждане: ' + error.message + '</div>';
+    return;
+  }
+
+  if (!data || !data.length) {
+    container.innerHTML = `<div class="empty-msg">${status === 'pending' ? 'Няма чакащи събития' : 'Няма публикувани събития'}</div>`;
+    return;
+  }
+
+  container.innerHTML = data.map(ev => eventCardHTML(ev, status)).join('');
+}
+
+function eventCardHTML(ev, status) {
+  const dateStr = ev.date ? new Date(ev.date).toLocaleDateString('bg-BG', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
+  const priceStr = (!ev.price || ev.price === 0) ? 'Безплатно' : ev.price + ' €';
+  const catName = CAT_NAMES[ev.category] || ev.category || '—';
+
+  let actions = '';
+  if (status === 'pending') {
+    actions = `
+      <div class="aec-actions">
+        <button class="aec-btn btn-approve" onclick="approveEvent(${ev.id})">✓ Публикувай</button>
+        <button class="aec-btn btn-delete" onclick="deleteEvent(${ev.id})">Изтрий</button>
+      </div>`;
+  } else {
+    actions = `
+      <div class="aec-actions">
+        <button class="aec-btn btn-edit" onclick="unpublishEvent(${ev.id})">↩ Скрий</button>
+        <button class="aec-btn btn-delete" onclick="deleteEvent(${ev.id})">Изтрий</button>
+      </div>`;
+  }
+
+  return `
+    <div class="admin-event-card">
+      <div class="aec-top">
+        <div class="aec-title">${ev.name || '(без название)'}</div>
+        <div class="aec-status ${status === 'pending' ? 'status-pending' : 'status-approved'}">${status === 'pending' ? 'Чака преглед' : 'Публикувано'}</div>
+      </div>
+      <div class="aec-meta">📅 ${dateStr} · 📍 ${ev.venue || '—'}, ${ev.city || '—'}</div>
+      <div class="aec-meta">${catName} · 💰 ${priceStr}</div>
+      ${ev.description ? `<div class="aec-desc">${ev.description}</div>` : ''}
+      ${actions}
+    </div>`;
+}
+
+async function approveEvent(id) {
+  const { error } = await sb.from('Events').update({ status: 'approved' }).eq('id', id);
+  if (error) { showToast('Грешка: ' + error.message, true); return; }
+  showToast('Публикувано! 🎉');
+  loadEvents('pending');
+  loadCounts();
+}
+
+async function unpublishEvent(id) {
+  const { error } = await sb.from('Events').update({ status: 'pending' }).eq('id', id);
+  if (error) { showToast('Грешка: ' + error.message, true); return; }
+  showToast('Скрито от приложението');
+  loadEvents('approved');
+  loadCounts();
+}
+
+async function deleteEvent(id) {
+  if (!confirm('Сигурна ли си, че искаш да изтриеш това събитие?')) return;
+  const { error } = await sb.from('Events').delete().eq('id', id);
+  if (error) { showToast('Грешка: ' + error.message, true); return; }
+  showToast('Изтрито');
+  loadEvents(document.getElementById('panel-pending').classList.contains('hidden') ? 'approved' : 'pending');
+  loadCounts();
+}
+
+async function loadCounts() {
+  const { data: pendingData } = await sb.from('Events').select('id').eq('status', 'pending');
+  const { data: approvedData } = await sb.from('Events').select('id').eq('status', 'approved');
+  document.getElementById('pending-count').textContent = pendingData ? pendingData.length : 0;
+  document.getElementById('approved-count').textContent = approvedData ? approvedData.length : 0;
+}
+
+// ══════════ TOAST ══════════
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ══════════ INIT ══════════
+checkSession();
+</script>
+</body>
+</html>
